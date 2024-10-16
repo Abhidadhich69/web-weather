@@ -1,0 +1,38 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+
+/* Add this to your App.css */
+@media (max-width: 768px) {
+    .box {
+      flex-direction: column; /* Stack items on smaller screens */
+      width: 90vw; /* Use full width */
+      height: auto; /* Allow height to adjust */
+    }
+  
+    .left-box,
+    .right-box {
+      width: 100%; /* Full width for boxes */
+      height: auto; /* Allow height to adjust */
+    }
+  
+    .temp,
+    .humidity,
+    .visibility,
+    .wind-speed {
+      flex-direction: column; /* Stack details vertically */
+      width: 100%; /* Use full width */
+    }
+  
+    .top-name {
+      font-size: 1.5rem; /* Adjust font size */
+    }
+  
+    .city-name {
+      font-size: 1rem; /* Adjust font size */
+    }
+  }
+  
+  /* You can add more media queries for different screen sizes as needed */
+  
