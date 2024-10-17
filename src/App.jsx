@@ -70,13 +70,15 @@ function App() {
   // Get user's geolocation
   useEffect(() => {
     if (navigator.geolocation) {
-      setIsLoadingLocation(true);
+      setIsLoadingLocation(true); // Show loading overlay
       navigator.geolocation.getCurrentPosition(
         (position) => {
           setLatitude(position.coords.latitude);
           setLongitude(position.coords.longitude);
           setGeoError(null);
           setIsLoadingLocation(false);
+          console.log("Latitude: ", position.coords.latitude);
+          console.log("Longitude: ", position.coords.longitude);
         },
         (error) => {
           let errorMsg = "An error occurred while getting your location.";
@@ -95,7 +97,7 @@ function App() {
           console.error(errorMsg);
           setIsLoadingLocation(false);
         },
-        { enableHighAccuracy: true, timeout: 20000, maximumAge: 0 }
+        { enableHighAccuracy: false, timeout: 10000, maximumAge: 0 } // Modified settings
       );
     } else {
       setGeoError("Geolocation is not supported by your browser.");
