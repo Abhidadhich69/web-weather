@@ -26,6 +26,9 @@ function App() {
   const [latitude, setLatitude] = useState(null);
   const [longitude, setLongitude] = useState(null);
   const [searchCity, setSearchCity] = useState(""); // State to handle search input
+  const [cityName, setCityName] = useState("");
+  const [isLoadingLocation, setIsLoadingLocation] = useState(true);
+  const [geoError, setGeoError] = useState(null);
 
   const API_KEY = "1bf526149dfc37e7d68ddedef73991a8";
 
@@ -67,15 +70,36 @@ function App() {
   // Get user's geolocation
   useEffect(() => {
     if (navigator.geolocation) {
+      setIsLoadingLocation(true);
       navigator.geolocation.getCurrentPosition(
         (position) => {
           setLatitude(position.coords.latitude);
           setLongitude(position.coords.longitude);
+          setGeoError(null);
+          setIsLoadingLocation(false);
         },
         (error) => {
-          console.error("Error getting geolocation", error);
-        }
+          let errorMsg = "An error occurred while getting your location.";
+          switch (error.code) {
+            case error.PERMISSION_DENIED:
+              errorMsg = "Please enable location services to use this feature.";
+              break;
+            case error.POSITION_UNAVAILABLE:
+              errorMsg = "Location information is currently unavailable.";
+              break;
+            case error.TIMEOUT:
+              errorMsg = "Getting location timed out. Please try again.";
+              break;
+          }
+          setGeoError(errorMsg);
+          console.error(errorMsg);
+          setIsLoadingLocation(false);
+        },
+        { enableHighAccuracy: true, timeout: 20000, maximumAge: 0 }
       );
+    } else {
+      setGeoError("Geolocation is not supported by your browser.");
+      setIsLoadingLocation(false);
     }
   }, []);
 
@@ -83,8 +107,11 @@ function App() {
   useEffect(() => {
     if (latitude && longitude) {
       fetchWeatherData(latitude, longitude);
+    } else if (geoError) {
+      // Fallback to default city
+      fetchWeatherData(null, null, "Ajmer");
     }
-  }, [latitude, longitude]);
+  }, [latitude, longitude, geoError]);
 
   // Weather condition to media mapping for background
   const weatherMedia = {
@@ -116,6 +143,29 @@ function App() {
     weatherBoxMedia[currentWeather] || weatherBoxMedia["Clear"];
   const selectedLogo =
     weatherLogoMedia[currentWeather] || weatherLogoMedia["Clear"];
+
+  const handleInputChange = (event) => {
+    setCityName(event.target.value);
+  };
+
+  const getWeather = async () => {
+    try {
+      const apiUrl = `https://api.openweathermap.org/data/2.5/weather?q=${cityName}&appid=${API_KEY}&units=metric`;
+      const response = await fetch(apiUrl);
+      const data = await response.json();
+
+      if (response.ok) {
+        console.log(data);
+        setWeatherData(data);
+        setCity(data.name);
+      } else {
+        console.error("City not found");
+        setWeatherData(null);
+      }
+    } catch (error) {
+      console.error("Error fetching the weather data:", error);
+    }
+  };
 
   return (
     <>
@@ -183,6 +233,7 @@ function App() {
                     type="search"
                     placeholder="Search city"
                     className="h-[6vh] w-[75%] px-4 rounded-l-full text-white bg-transparent border-none outline-none"
+                    onChange={handleInputChange}
                   />
 
                   {/* Search Icon */}
@@ -192,6 +243,7 @@ function App() {
                       viewBox="0 0 24 24"
                       fill="rgba(255,255,255,1)"
                       className="h-6 w-6"
+                      onClick={getWeather}
                     >
                       <path d="M11 2C15.968 2 20 6.032 20 11C20 15.968 15.968 20 11 20C6.032 20 2 15.968 2 11C2 6.032 6.032 2 11 2ZM11 18C14.8675 18 18 14.8675 18 11C18 7.1325 14.8675 4 11 4C7.1325 4 4 7.1325 4 11C4 14.8675 7.1325 18 11 18ZM19.4853 18.0711L22.3137 20.8995L20.8995 22.3137L18.0711 19.4853L19.4853 18.0711Z"></path>
                     </svg>
@@ -220,6 +272,18 @@ function App() {
             </div>
           </div>
         </div>
+        {isLoadingLocation && (
+          <div className="absolute top-0 left-0 w-full h-full flex items-center justify-center bg-black bg-opacity-50 z-50">
+            <div className="text-white text-2xl">Getting your location...</div>
+          </div>
+        )}
+        {geoError && (
+          <div className="absolute top-0 left-0 w-full h-full flex items-center justify-center bg-black bg-opacity-50 z-50">
+            <div className="text-white text-2xl bg-red-500 p-4 rounded-lg">
+              {geoError}
+            </div>
+          </div>
+        )}
       </main>
     </>
   );
